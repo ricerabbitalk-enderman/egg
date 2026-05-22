@@ -1,9 +1,23 @@
 {
   "replace": false,
   "values": [
-    "egg:input/__unload",
-    "egg:alignment/__unload",
-    "egg:animation/__unload",
-    "egg:pack/__unload"
+    "egg:despawn/_unload",
+    "egg:ray/_unload",
+    "egg:input/_unload",
+    "egg:block/_unload",
+    "egg:alignment/_unload",
+    "egg:animation/_unload",
+    "egg:brain/_unload",
+    "egg:soul/_unload",
+    "egg:pack/_unload",
+    "egg:player/_unload",
+    "egg:key/backward/_unload",
+    "egg:key/forward/_unload",
+    "egg:key/left/_unload",
+    "egg:key/right/_unload",
+    "egg:key/jump/_unload",
+    "egg:key/sneak/_unload",
+    "egg:key/sprint/_unload",
+    "egg:_mob/_unload"
   ]
 }

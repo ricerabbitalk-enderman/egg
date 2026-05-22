@@ -1,0 +1,2 @@
+effect give @e[type=!minecraft:creeper,tag=egg.invisible,predicate=!egg:property/invisible] minecraft:invisibility infinite 127 true
+effect give @e[type=minecraft:creeper,tag=egg.invisible,predicate=!egg:property/invisible] minecraft:invisibility 5 127 true

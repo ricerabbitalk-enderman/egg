@@ -1,15 +1,23 @@
+#:function ja
+#@return 処理の成否
+#@text
+#> アニメーションを再生します。
+#> 再生中は egg.animation.playing タグが付与されます。
+#> 再生中かどうかはタグの有無で確認してください。
+#:
+
 ## Verify.
-execute unless entity @s[type=minecraft:block_display] run return run function egg:__/error/throw {message:"[ERROR] function egg:animation/-play (2): entity denied (expected type=minecraft:block_display)",selector:"@s"}
-execute unless entity @s[tag=egg.animation] run return run function egg:__/error/throw {message:"[ERROR] function egg:animation/-play (3): entity denied (expected tag=egg.animation)",entity:"@s",nbt:"Tags"}
+execute unless entity @s[type=minecraft:block_display] run return fail
+execute unless entity @s[tag=egg.animation] run return fail
 
 ## Pop.
-function egg:animation/__/-pop
+execute unless function egg:animation/-/-pop run return fail
 ## Set pose.
-function egg:model/-set_pose
+execute unless function egg:model/-set_pose run return fail
 ## Disable interpolation.
-function egg:model/-transform_without_interpolation
+execute unless function egg:model/-transform_without_interpolation run return fail
 ## Add tags.
-tag @s add egg.animation.__initial_point
+tag @s add egg.animation._initial_point
 tag @s add egg.animation.playing
 
 ## Success.

@@ -1,54 +1,25 @@
+#:function ja
+#@in storage rotateion Rotation データ
+#@out storage motion Motion データ
+#@return 処理の成否（外部座標ディメンションが利用できない場合は失敗する）
+#@text
+#> `Rotation` （角度）から `Motion` （単位ベクトル）を取得します。
+#> 外部座標ディメンション `egg:_coord` を使った技術のため、ワールド生成直後から利用可能になるまでラグがあります。
+#> 読み込み直後から利用する際は関数の成否を必ず確認するようにしてください。
+#@code mcfunction
+#> # コマンド実行者 `@s`の Rotation から Motion を取得
+#> data modify storage egg:3d/motion_from_rotation <<rotation set from entity @s Rotation
+#> execute unless function egg:3d/motion_from_rotation run return fail
+#>
+#> # 雪玉を Motion の方向に投擲.
+#> execute summon minecraft:snowball run data modify entity @s Motion set from storage egg:3d/motion_from_rotation >>motion
+#:
+
+## Cleanup.
+data remove storage egg:3d/motion_from_rotation >>motion
+
 ## Verify.
-execute unless data storage egg:3d/motion_from_rotation <<rotation run return run function egg:__/error/throw {message:"[ERROR] function egg:3d/motion_from_rotation (2): storage not found (storage egg:3d/motion_from_rotation <<rotation)",storage:"egg:3d/motion_from_rotation",nbt:"<<rotation"}
+execute unless function egg:_coord/loaded run return fail
 
-## Fixed from double.
-# yaw angle
-data modify storage egg:__/point/fixed/from_double <<~double set from storage egg:3d/motion_from_rotation <<rotation[0]
-execute store result score #egg:3d/motion_from_rotation|yaw~fixed -- run function egg:__/point/fixed/from_double
-# pitch angle
-data modify storage egg:__/point/fixed/from_double <<~double set from storage egg:3d/motion_from_rotation <<rotation[1]
-execute store result score #egg:3d/motion_from_rotation|pitch~fixed -- run function egg:__/point/fixed/from_double
-
-## Sin and cos values from yaw angle.
-scoreboard players operation #egg:math/fixed/sin_cos|<<degree~fixed -- = #egg:3d/motion_from_rotation|yaw~fixed --
-function egg:math/fixed/sin_cos
-scoreboard players operation #egg:3d/motion_from_rotation|sin_yaw~fixed -- = #egg:math/fixed/sin_cos|>>sin~fixed --
-scoreboard players operation #egg:3d/motion_from_rotation|cos_yaw~fixed -- = #egg:math/fixed/sin_cos|>>cos~fixed --
-
-## Sin and cos values from pitch angle.
-scoreboard players operation #egg:math/fixed/sin_cos|<<degree~fixed -- = #egg:3d/motion_from_rotation|pitch~fixed --
-function egg:math/fixed/sin_cos
-scoreboard players operation #egg:3d/motion_from_rotation|sin_pitch~fixed -- = #egg:math/fixed/sin_cos|>>sin~fixed --
-scoreboard players operation #egg:3d/motion_from_rotation|cos_pitch~fixed -- = #egg:math/fixed/sin_cos|>>cos~fixed --
-
-## to Motion.
-# x = -(sin(yaw) * sin(pitch))
-scoreboard players operation #egg:3d/motion_from_rotation|x~fixed -- = #egg:3d/motion_from_rotation|sin_yaw~fixed --
-scoreboard players operation #egg:3d/motion_from_rotation|x~fixed -- *= #egg:3d/motion_from_rotation|cos_pitch~fixed --
-scoreboard players operation #egg:3d/motion_from_rotation|x~fixed -- *= #egg|-1 --
-scoreboard players operation #egg:3d/motion_from_rotation|x~fixed -- /= #egg|unit~fixed --
-# y = -sin(pitch)
-scoreboard players operation #egg:3d/motion_from_rotation|y~fixed -- = #egg:3d/motion_from_rotation|sin_pitch~fixed --
-scoreboard players operation #egg:3d/motion_from_rotation|y~fixed -- *= #egg|-1 --
-# z = -(cos(ywa) * cos(pitch))
-scoreboard players operation #egg:3d/motion_from_rotation|z~fixed -- = #egg:3d/motion_from_rotation|cos_yaw~fixed --
-scoreboard players operation #egg:3d/motion_from_rotation|z~fixed -- *= #egg:3d/motion_from_rotation|cos_pitch~fixed --
-scoreboard players operation #egg:3d/motion_from_rotation|z~fixed -- /= #egg|unit~fixed --
-
-## Fixed to double.
-data modify storage egg:3d/motion_from_rotation >>motion set value []
-# x
-scoreboard players operation #egg:__/point/fixed/to_double|<<~fixed -- = #egg:3d/motion_from_rotation|x~fixed --
-function egg:__/point/fixed/to_double
-data modify storage egg:3d/motion_from_rotation >>motion append from storage egg:__/point/fixed/to_double >>~double
-# y
-scoreboard players operation #egg:__/point/fixed/to_double|<<~fixed -- = #egg:3d/motion_from_rotation|y~fixed --
-function egg:__/point/fixed/to_double
-data modify storage egg:3d/motion_from_rotation >>motion append from storage egg:__/point/fixed/to_double >>~double
-# z
-scoreboard players operation #egg:__/point/fixed/to_double|<<~fixed -- = #egg:3d/motion_from_rotation|z~fixed --
-function egg:__/point/fixed/to_double
-data modify storage egg:3d/motion_from_rotation >>motion append from storage egg:__/point/fixed/to_double >>~double
-
-## Success.
-return 1
+## Calculate
+execute in egg:_coord positioned 0.0 0.0 0.0 rotated 0.0 0.0 run return run function egg:3d/-/motion_from_rotation

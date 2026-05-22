@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "values": [
+    "#egg:mob",
+    "minecraft:player",
+    {"id":"minecraft:mannequin","required":false}
+  ]
+}

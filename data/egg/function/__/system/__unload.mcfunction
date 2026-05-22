@@ -1,9 +1,0 @@
-## disable features of all players
-execute as @a[tag=egg.system] run function egg:__/system/__/-disable
-
-## Unload sub modules.
-function #egg:system/unload
-
-## Undefine scoreboards
-# Command.
-scoreboard objectives remove egg

@@ -1,0 +1,10 @@
+{
+  "function": "minecraft:copy_custom_data",
+  "source":{
+    "type": "storage",
+    "source": "egg:set_extended_id"
+  },
+  "ops": [
+    {"source": "<<", "target": "egg", "op": "merge"}
+  ]
+}

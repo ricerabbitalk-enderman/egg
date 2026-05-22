@@ -1,0 +1,1 @@
+$return run data modify entity @s data.egg.animation._timeline set from storage egg:bdengine animation.$(path)[$(page)]

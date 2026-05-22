@@ -1,0 +1,1 @@
+execute as @e[type=minecraft:piglin,tag=egg.brain] unless function egg:brain/-/-update run function egg:brain/-delete

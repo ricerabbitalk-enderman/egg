@@ -1,6 +1,6 @@
 {
   "replace": false,
   "values": [
-    "egg:__load"
+    "egg:_load"
   ]
 }

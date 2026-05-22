@@ -1,865 +1,659 @@
-# mcbird-egg
+# Essential General Gear (egg)
 
-## egg, the EasyGoing Generator ver. 1.5.2 for 1.21.11
+## 目次
 
-[English](README.md) / [日本語](README-jp.md)
+- [1. 概要](#1-概要--introduction)
+- [2. 対応バージョンと前提](#2-対応バージョンと前提)
+- [3. インストール方法](#3-インストール方法)
+- [4. 関数の入出力ルール](#4-関数の入出力ルール)
+- [5. エンティティとタグの関係](#5-エンティティとタグの関係)
+- [6. 主な機能一覧](#6-主な機能一覧)
+- [7. 各機能の簡単な使い方例](#7-各機能の簡単な使い方例)
 
-This is being developed with the goal of “providing functional features at the bare minimum level required for practical use.”
+## 1. 概要 / Introduction
 
-Under the name **egg, the EasyGoing Generator**, we aim to make it as easy as possible for both users and developers.
+Essential General Gear (egg) は、Minecraft データパック作成者のための基盤データパックです。
 
-We plan to implement features broadly across categories as long as they seem usable.
+データパックでは、カスタムモブや特殊なブロック、物理的な挙動の再現など、バニラが提供していないのにデータパックを作る上で欲しい機能が数多く存在します。  
+egg はそうした機能を集約・一般化を目指すライブラリです。
 
-# Reference
+これを利用することで、データパック作成の敷居を大幅に下げ、制作者が**本来作りたい世界観やギミック**に集中できる環境を提供します。
 
-## Objective
+本データパックは **[MIT License](LICENSE)** のもとで公開されています。
 
-### score #var_name --
+egg を基盤にする代表的なプロジェクトとして、  
+- 次元移動型データパック `overflows` (開発中)
+- その中に実装される幻想ディメンション `mystique` (開発中)
 
-**--** is the objective used for variables.
+などがあります。
 
-```mcfunction
-  # Count.
-  scoreboard playres set #count -- 10-
-  # Damage calculation.
-  scoreboard players operation #hp -- -= #damage --
-  # Return result.
-  return run scoreboard players get #result --
+## 2. 対応バージョンと前提
 
-  # NG! do not use on actual entities.
-  scoreboard players set @s -- 1234
-```
+**対応バージョン**
+- Minecraft Java Edition 26.1.x（安定版）のみ
 
-## Naming Convention
+（今後のスナップショット対応は、安定性が確認でき次第順次開放予定）
 
-**(function)** is the name of function.
+**前提**
+本データパックに特別な前提条件はありません。  
+単体で動作します。
 
-### scoreboard
+## 3. インストール方法
 
-|Notation|Meaning|
-|:-|:-|
-|**score** #(function)\|<<**argument**|input/argument|
-|**score** #(function)\|>>**result**|output/result|
+1. ダウンロードした `mcbird-egg.zip` を **ワールドの `datapacks` フォルダ**にコピーしてください。
+2. ワールドを一度退出して再入室してください。
 
-To avoid name collisions in the scoreboard, the specification requires that function names be prefixed.
+> **注意**  
+> egg にはディメンションとエンチャントの定義が含まれているため、`/reload` だけでは不十分な場合があります。必ずワールドの再入室をおすすめします。
 
-This allows the function's inputs and outputs to be clearly distinguished by the function name.
+インストール完了後、`/trigger egg` で動作確認ができます。
 
-```mcfunction
-  ## Example: input/argument
-  # Set arguments.
-  execute store result score #xxx:heal|<<hp -- run data get entity @s Health
-  scoreboard players set #xxx:heal|<<amount -- 10
-  scoreboard players set #xxx:heal|<<percent -- 20
-  # Call function.
-  function xxx:heal
+## 4. 関数の入出力ルール
 
-  ## Example: output/result + input/argument
-  # Get rotation.
-  function xxx:get_rotation
-  # Get result and change rotation.
-  scoreboard players add #xxx:get_rotation|>>yaw -- 20
-  scoreboard players add #xxx:get_rotation|>>pitch -- 30
-  # Set argument.
-  scoreboard players operation #xxx:rotate|<<yaw -- = #xxx:get_rotation|>>yaw
-  scoreboard players operation #xxx:rotate|<<pitch -- = #xxx:get_rotation|>>pitch
-  # Rotate.
-  function xxx:rotate
-```
+eggの関数はスコアボードとストレージを使ってデータをやり取りします。
 
-### storage
+**入力**  
+- スコアボード：`score #egg:(関数パス)|<<変数名 --`  
+- ストレージ：`storage egg:(関数パス) <<変数名`
 
-|Notation|Meaning|
-|:-|:-|
-|**storage** (function) <<**argument**|input/argument|
-|**storage** (function) >>**result**|output/result|
+**出力**  
+- スコアボード：`score #egg:(関数パス)|>>変数名 --`  
+- ストレージ：`storage egg:(関数パス) >>変数名`
 
-Like the score, the namespace is the function name.
+詳細な仕様やエンティティタグの扱い方は **[インターフェース詳細解説](./reference_of_interface.md)** を参照してください。
+
+## 5. エンティティとタグの関係
+
+一部の機能は、特定のタグを持つエンティティを `@s` として指定する必要があります。
+
+関数名に `-`（ハイフン）が付いているものは専用タグ必須です。
 
 ```mcfunction
-  ## Example: input/argument + output/result (function xxx:tan)
-  # Set argument.
-  data modify storage xxx:sin_cos <<degree set from storage xxx:tan <<degree
-  # Get sin and cos.
-  function xxx:sin_cos
-  # Get result.
-  execute store result score #xxx:tan|sin run data get storage xxx:sin_cos >>sin
-  execute store result score #xxx:tan|cos run data get storage xxx:sin_cos >>cos
-  # Calculate tan.
-  scoreboard players operation #xxx:tan|result -- = #xxx:tan|sin --
-  scoreboard players operation #xxx:tan|result -- /= #xxx:tan|cos --
-  # Return tan.
-  return run scoreboard players get #xxx:tan|result
+execute as @e[tag=egg.brain] run function egg:brain/-target
 ```
 
-## egg:3d
+## 6. 主な機能一覧
 
-**This module consolidates processing related to the game's 3D space.**
+egg は、データパック作成を強力に支援する以下の機能群を提供します。
 
-Calculations for 3D positional relationships, orientation, and momentum are performed.
+### 3D関連
 
-The primary targets for reference and manipulation are the Pos, Motion, and Rotation fields within NBT data tags.
+* モーションと回転の相互変換、6bit精度の固定小数点演算  
+* **プレイヤーやモブの向いた方向に物体を正確に投擲する機能**
 
-### `function egg:3d/motion_from_rotation`
+  → オリジナルの魔法やアイテムを放つようなギミックが作りやすくなり、複雑な動きや座標計算も大幅に簡略化できます。
 
-|Parameter|Type|Description|
-|:-|:-|:-|
-|`storage egg:3d/motion_from_rotation <<rotation`|in|Rotation data|
-|`storage egg:3d/motion_from_rotation >>motion`|out|Motion data|
-|`return`|out|Succeeded function or not|
+### 入力関連
 
-**Get Motion from Rotation.**
+* **特殊アイテムの右クリック検知**、操作キーの入力検知
 
-Rotation data and Motion data correspond to the Rotation and Motion NBT data tags.
+  → インタラクティブなギミック（魔法の発動、装置の操作など）が作りやすくなります。
 
-The Motion data obtained is a unit vector (1 tick movement equals 1 block).
+### モデル・アニメーション関連
 
-Use the function egg:nog/scale_motion to adjust the movement amount.
+* BDEngine で作成した**3Dモデルの読み込み・表示**
+* **アニメーション再生機能**
 
-### `function egg:3d/rotation_from_motion`
+  → 高品質なカスタムモデルを比較的簡単に実装可能
 
-|Parameter|Type|Description|
-|:-|:-|:-|
-|`storage egg:3d/rotation_from_motion <<motion`|in|Motion data|
-|`storage egg:3d/rotation_from_motion >>rotation`|out|Rotation data|
-|`return`|out|Succeeded function or not|
+### ダメージ処理関連
 
-**Get Rotation from Motion.**
+* 柔軟なダメージ・ノックバック・効果付与処理（プレイヤーとの関係性を考慮）
+* プレイヤーとの関係性を考慮した判定
 
-Rotation data and Motion data correspond to the Rotation and Motion NBT data tags.
+  → カスタムモブの攻撃処理や**特殊な戦闘ギミックを大幅に簡略化できます**。
 
-Since internal calculations use fixed-point arithmetic, precision varies depending on the values.
+### カスタムモブ関連
 
-For high-precision results, other methods are recommended.
+* 懐き（フォロー）機能と戦闘行動を組み合わせた汎用システム
+  → Mirror Phantom (mystique) をはじめとする、**高度で柔軟なカスタムモブを比較的簡単に作成できます**。
 
-## egg:math
+### カスタムブロック関連
 
-**This is a module for mathematical calculations such as trigonometric functions.**
+* レイキャストによる精密検知、右クリック機能、外観変更を兼ね備えた疑似カスタムブロック
 
-In this module, input and output parameters are suffixed with ~double, declaring that they accept double inputs and produce double outputs.
+  → **インタラクティブな装置や特殊なブロック（感知式照明、隠し扉など）が作りやすくなります**。
 
-However, note that internal calculations are performed using fixed-point arithmetic, so precision may vary depending on the conditions.
+### その他便利機能
 
-### `function egg:math/sin_cos`
+* コールバック関数のデータ化、エンティティポインタ、疑似デスポーン処理など
 
-|Parameter|Type|Description|
-|:-|:-|:-|
-|`storage egg:math/sin_cos <<degree~double`|in|Unlimited degrees|
-|`storage egg:math/sin_cos >>sin~double`|out|Sin value|
-|`storage egg:math/sin_cos >>cos~double`|out|Cos value|
-|`return`|out|Succeeded function or not|
+  → データパック作成時のさまざまな **「面倒くさい部分」を軽減します**。
 
-**Simultaneously obtains the values of sin and cos for a given angle in degrees.**
+## 7. 各機能の簡単な使い方例
 
-For processing efficiency, sin and cos are calculated as a set.
+以下に主な機能の概要と基本的な使用例を記載しています。  
+詳細は各機能のリファレンスを参照してください。
 
-### `function egg:math/sin_cos_tan`
+### 小目次
+- [egg:3d — 3D計算関連機能](#egg3d--3d計算関連機能)
+- [egg:input & egg:key — 入力関連機能](#egginput--eggkey--入力関連機能)
+- [egg:model & egg:animation — モデル＆アニメーション機能](#eggmodel--egganimation--モデルアニメーション機能)
+- [egg:block — カスタムブロック機能](#eggblock--疑似カスタムブロック機能)
+- [egg:soul & egg:brain — カスタムモブ基盤](#eggsoul--eggbrain---カスタムモブ基盤魂思考回路)
+- [egg:shock — 拡張ダメージ処理](#eggshock--拡張ダメージ処理)
+- [egg:alignment — 関係性判定機能](#eggalignment--関係性判定機能)
+- [egg:data — ストレージデータ安全管理](#eggdata--ストレージデータ安全管理)
+- [egg:math — 数学関連機能](#eggmath--数学関係機能)
+- [egg:player — プレイヤー情報取得](#eggplayer--プレイヤー情報取得)
+- [egg:utility — その他の便利機能](#eggutility--その他の便利機能)
 
-@function egg:math/sin_cos_tan
-|Parameter|Type|Description|
-|:-|:-|:-|
-|`storage egg:math/sin_cos_tan <<degree~double`|in|Unlimited degrees|
-|`storage egg:math/sin_cos_tan >>sin~double`|out|Sin value|
-|`storage egg:math/sin_cos_tan >>cos~double`|out|Cos value|
-|`storage egg:math/sin_cos_tan >>tan~double`|out|Tan value|
-|`return`|out|Succeeded function or not|
+## egg:3d — 3D計算関連機能
 
-**Calculates the values of sin, cos, and tan simultaneously for a given angle in degrees.**
+`Motion`（移動力）と `Rotation`（向き）の相互変換を中心に、3Dベクトル関連の便利機能を提供します。
 
-Since calculating tan from sin/cos yields higher precision than direct tan calculation, all trigonometric values are computed.
+特に**プレイヤーやモブの向いた方向に物体を正確に投擲する**処理が大幅に簡単になります。
 
-Fixed-point arithmetic is used, resulting in reduced precision for large values near 90 degrees.
+### 主な用途
+* オリジナル魔法や飛翔体の投擲
+* 進行方向に合わせてエンティティの向きを調整
+* ベクトル演算（内積・外積・単位ベクトルなど）
 
-### `function egg:math/asin_acos`
+### 基本的な使用例
 
-|Parameter|Type|Description|
-|:-|:-|:-|
-|`storage egg:math/asin_acos <<x~double`|in|Trigonometric value x (-1 <= x <= 1)|
-|`storage egg:math/asin_acos >>asin~double`|out|Arcsin value|
-|`storage egg:math/asin_acos >>acos~double`|out|Arccos value|
-|`return`|out|Succeeded function or not|
+```shoot.mcfunction
+# 向いた方向にドラゴンの火の玉を投擲
+data modify storage egg:3d/motion_from_rotation <<rotation set from entity @s Rotation
+function egg:3d/motion_from_rotation
+execute summon minecraft:dragon_fireball run data modify entity @s Motion set from storage egg:3d/motion_from_rotation >>motion
+```
 
-**Get arcsin and arccos.**
+```tick.mcfunction
+# 飛翔体の向きを移動力から更新し続ける
+data modify storage egg:3d/rotation_from_motion <<motion set from entity @s Motion
+function egg:3d/rotation_from_motion
+data modify entity @s Rotation set from storage egg:3d/rotation_from_motion >>rotation
+```
 
-To optimize processing efficiency, arcsin and arccos are calculated as a set.
-Arguments outside the range of -1 to 1 are adjusted to fall within this range.
+### 詳細機能一覧
 
-If you require strict verification, check beforehand.
+* [egg:3d/motion_from_rotation](docs/3d.md#egg3dmotion_from_rotation) — `Rotation` → `Motion`（単位ベクトル）
+* [egg:3d/rotation_from_motion](docs/3d.md#egg3drotation_from_motion) — `Motion` → `Rotation`
+* [egg:3d/unit_vector](docs/3d.md#egg3dunit_vector) — 単位ベクトルを取得
+* [egg:3d/scalar](docs/3d.md#egg3dscalar) — ベクトルの大きさを取得
+* [egg:3d/cross_product](docs/3d.md#egg3dcross_product) — 外積
+* [egg:3d/dot_product](docs/3d.md#egg3ddot_product) — 内積
 
-### `function egg:math/atan2`
+※ 一部の関数は**固定小数点演算**による精度制限や、**外部座標ディメンション**を使用しています。
 
-|Parameter|Type|Description|
-|:-|:-|:-|
-|`storage egg:math/atan2 <<x~double`|in|Coordinate x|
-|`storage egg:math/atan2 <<y~double`|in|Coordinate y|
-|`storage egg:math/atan2 >>atan~double`|out|Arctan value|
-|`return`|out|Succeeded function or not|
+### 注意事項
 
-**Calculate the slope from (x, y) and get the arctan value.**
+* 固定小数点を使用する関数については **[固定小数点について](docs/definition.md#固定小数点)** と **[精度計測結果](https://docs.google.com/spreadsheets/d/1A1fZ8uPlHeow_a4tDJxWSpsXGy8BlWc6allukIL4M0o/edit?usp=sharing)** を参照してください。
+* 外部座標ディメンション egg:_coord を使用する関数は、ワールド読み込み直後に利用できない場合があります（詳細は **[外部座標ディメンション](./feature_coord.md)** を参照）。
 
-Fixed-point calculations are acceptable when moderate precision suffices, but consider alternative methods when high precision is required.
+## egg:input & egg:key — 入力関連機能
 
-Fixed-point systems particularly struggle with extremely large or small numbers, leading to significant precision errors.
+プレイヤーの**右クリック**と**各種操作キー**の入力を検知できます。
 
-Exercise caution when numerical differences between x and y are extreme, such as (10000, 0.0001).
+**egg:input**（右クリック検知）を使うには、以下の NBT を持ったアイテム（`egg.device`）を手に持つ必要があります。
 
-## egg:input
-
-**This feature detects right-clicks on items within the data component 
-
-`minecraft:custom_data` that contain `{“egg”:{‘type’:“device”}}`.**
-As a prerequisite, the target `@s` must be holding an item with the data component `minecraft:block_attacks`.
-
-If you wish to bypass the actual shield functionality, add the data component to the item as shown below.
 ```json
 {
   "components": {
-    "minecraft:blocks_attacks": {
-      "damage_reductions": [{"base": 0,"factor": 0}]
-    },
-    "minecraft:custom_data": {"egg": {"type": "device"}}
+    "minecraft:blocks_attacks": {"damage_reductions": [{"base": 0,"factor": 0}]},
+    "minecraft:custom_data": {"egg": {"type": "device"}},
+    "minecraft:max_stack_size": 1  // egg.device はスタックできない ("minecraft:max_damage" でも可)
   }
 }
 ```
-Data components are usable in recipes, root tables, etc.
-Hereafter, items possessing this data component will be denoted as `egg:device`.
-This feature is automatically granted to all players.
 
-### `function egg:input/-pushed`
+**egg:key**（WASD・ジャンプ・スニークなど）は、全プレイヤーに自動で有効化されます。
 
-|Parameter|Type|Description|
-|:-|:-|:-|
-|`return`|out|Number of ticks input continuously|
-
-**Determine whether player `@s` is right-clicking on `egg:device`. Both hands are considered.**
-
-This returns true = “number of ticks input is held” continuously while right-clicked.
-
-To detect a single press for one-time activation, use `function egg:input/-triggered`.
-
-### `function egg:input/-released`
-
-|Parameter|Type|Description|
-|:-|:-|:-|
-|`return`|out|Ticks that have been continuously pressed|
-
-**Detects whether the player `@s` has stopped right-clicking on `egg:device`. This applies to both hands.**
-
-This returns true only for the first tick that was no longer right-clicked, representing the number of ticks that were continuously input.
-
-### `function egg:input/-triggered`
-
-|Parameter|Type|Description|
-|:-|:-|:-|
-|`return`|out|Number of ticks without input|
-
-**Determine whether player `@s` is right-clicking on `egg:device`. Both hands are considered.**
-
-This returns true only for the first tick right-clicked, representing the “number of ticks in non-input state”.
-
-To detect sustained presses like burst fire or full-auto fire, use `function egg:input/-pushed`.
-
-### `function egg:input/-mainhand`
-
-|Parameter|Type|Description|
-|:-|:-|:-|
-|`return`|out|Mainhand item identifier|
-
-**Get the mainhand item identifier.**
-
-This identifier is used to determine whether to interrupt charged attacks when the player presses and holds the right click button while moving the hotbar or switches items using the F key during a charged attack,
-
-judging that an inappropriate item has been selected.
-
-This identifier is automatically assigned to egg:device placed in either the mainhand or offhand.
-
-### `function egg:input/-offhand`
-
-|Parameter|Type|Description|
-|:-|:-|:-|
-|`return`|out|Offhand item identifier|
-
-**Get the offhand item identifier.**
-
-This identifier is used to determine whether to interrupt charged attacks when the player presses and holds the right click button while moving the hotbar or switches items using the F key during a charged attack,
-
-judging that an inappropriate item has been selected.
-
-This identifier is automatically assigned to egg:device placed in either the mainhand or offhand.
-
-## egg:alignment
-
-**This module expresses the relationships between mobs based on the player.**
-
-Mob alignment will now be properly maintained in egg.alignment during the `minecraft:tick` update process immediately after spawning.
-
-Note that alignment can change at any time due to neutral mobs becoming hostile or being tamed.
-
-It can take the following values:
-
-|-1|0|1|
-|:-:|:-:|:-:|
-|Hostile to player|Neutral to player|Friendly to player|
-
-Furthermore, this alignment solely represents the relationship between the player and all other players as a single allied faction.
-
-It does not represent player-versus-player relationships between players themselves, nor does it represent hostile relationships unaffected by the player (such as wild wolves attacking skeletons).
-
-### `function egg:alignment/conflict`
-
-|Parameter|Type|Description|
-|:-|:-|:-|
-|`score #egg:alignment/conflict\|<<this --`|in|This alignment|
-|`score #egg:alignment/conflict\|<<that --`|in|That alignment|
-|`return`|out|Whether they are in conflict|
-
-**Checks whether it is in conflict with the target.**
-
-### `function egg:alignment/friendly`
-
-|Parameter|Type|Description|
-|:-|:-|:-|
-|`score #egg:alignment/friendly\|<<this --`|in|This alignment|
-|`score #egg:alignment/friendly\|<<that --`|in|That alignment|
-|`return`|out|Whether they are friendly or not.|
-
-**Checks whether they are friendly or not.**
-
-## egg:pointer
-
-**type** : `minecraft:snowball`
-
-**tag** : `egg.pointer`
-
-**This is a snowball pointer feature that references entities.**
-
-Using the snowball's NBT data tag “Owner”, you can switch the command executor `@s` to the referenced entity directly via `execute on origin`.
-
-Snowballs that become pointers become invisible, weightless entities that cannot be destroyed by collisions.
-
-If no longer needed, explicitly delete them using the kill command.
-
-### `function egg:pointer/-enable`
-
-|Parameter|Type|Description|
-|:-|:-|:-|
-|`return`|out|Succeeded or not.|
-
-**Begin using snowball `@s` as a pointer entity.**
-
-Pointer entities can directly specify the referenced entity using the `on origin` subcommand.
-
-## egg:shock
-
-**This module handles damage and knockback.**
-
-It inflicts damage and knockback within a range from the command execution point.
-
-Functions are split based on the presence of the attacking entity causing the damage and the relationship (alignment) between the attacking and target entities.
-
-While it has many arguments, most have default values, so it functions with just the minimum specifications of .distance and .amount. Default values for arguments are shown below.
-
-|Argument|Default Value|
-|:-|:-|
-|<<.distance|Required|
-|<<.amount|Required|
-|<<.source|Optional|
-|<<.namespace|“minecraft”|
-|<<.type|“generic”|
-|<<.scale|1.0|
-|<<.xv|0.0|
-|<<.yv|0.0|
-|<<.zv|0.0|
-
-Damage type is expressed by <<.namespace and <<.type, defaulting to `minecraft:generic`.
-
-Knockback is applied to entities within the effect radius, increasing in magnitude toward the source and decreasing with distance.
-
-Furthermore, the knockback momentum can be scaled using <<.scale and adjusted using <<.xv, <<.yv, <<.zv.
-
-Depending on implementation, upward knockback generally does not occur by default. Therefore, you must either use <<.yv to simulate upward knockback or position the effect source slightly below ground level.
-
-### `function egg:shock/give_by_no_one`
-
-|Parameter|Type|Description|
-|:-|:-|:-|
-|`storage egg:shock/give_by_no_one <<.distance`|in|Damage range|
-|`storage egg:shock/give_by_no_one <<.amount`|in|Damage amount|
-|`storage egg:shock/give_by_no_one <<.namespace`|in|Damage type (namespace)|
-|`storage egg:shock/give_by_no_one <<.type`|in|Damage type (type)|
-|`storage egg:shock/give_by_no_one <<.scale`|in|Knockback multiplier (scale >= 0)|
-|`storage egg:shock/give_by_no_one <<.xv`|in|Knockback initial velocity x|
-|`storage egg:shock/give_by_no_one <<.yv`|in|Knockback initial velocity y|
-|`storage egg:shock/give_by_no_one <<.zv`|in|Knockback initial velocity z|
-|`return`|out|Succeeded or not.|
-
-**Inflicts damage and knockback on all entities within a radius of distance centered on the command position.**
-
-This damage processing involves no malicious intent on the part of the attacker, and the damaged entity accepts it as mere misfortune.
-
-### `function egg:shock/give_to_anyone`
-
-|Parameter|Type|Description|
-|:-|:-|:-|
-|`storage egg:shock/give_to_anyone <<.distance`|in|Damage range|
-|`storage egg:shock/give_to_anyone <<.amount`|in|Damage amount|
-|`storage egg:shock/give_to_anyone <<.source`|in|UUID of attacker entity|
-|`storage egg:shock/give_to_anyone <<.namespace`|in|Damage type (namespace)|
-|`storage egg:shock/give_to_anyone <<.type`|in|Damage type (type)|
-|`storage egg:shock/give_to_anyone <<.scale`|in|Knockback multiplier (scale >= 0)|
-|`storage egg:shock/give_to_anyone <<.xv`|in|Knockback initial velocity x|
-|`storage egg:shock/give_to_anyone <<.yv`|in|Knockback initial velocity y|
-|`storage egg:shock/give_to_anyone <<.zv`|in|Knockback initial velocity z|
-|`return`|out|Succeeded or not.|
-
-**Inflicts damage and knockback on all entities within a radius of distance centered on the command position.**
-
-This damage processing involves no malicious intent on the part of the attacker, and the damaged entity accepts it as mere misfortune.
-
-### `function egg:shock/give_to_oppositions`
-
-|Parameter|Type|Description|
-|:-|:-|:-|
-|`storage egg:shock/give_to_oppositions <<.distance`|in|Damage range|
-|`storage egg:shock/give_to_oppositions <<.amount`|in|Damage amount|
-|`storage egg:shock/give_to_oppositions <<.source`|in|UUID of attacker entity|
-|`storage egg:shock/give_to_oppositions <<.namespace`|in|Damage type (namespace)|
-|`storage egg:shock/give_to_oppositions <<.type`|in|Damage type (type)|
-|`storage egg:shock/give_to_oppositions <<.scale`|in|Knockback multiplier (scale >= 0)|
-|`storage egg:shock/give_to_oppositions <<.xv`|in|Knockback initial velocity x|
-|`storage egg:shock/give_to_oppositions <<.yv`|in|Knockback initial velocity y|
-|`storage egg:shock/give_to_oppositions <<.zv`|in|Knockback initial velocity z|
-|`return`|out|Succeeded or not.|
-
-**Inflicts damage and knockback on entities hostile to the attacker within a radius of distance centered on the command position.**
-
-This damage processing involves no malicious intent on the part of the attacker, and the damaged entity accepts it as mere misfortune.
-
-### `function egg:shock/give_to_others`
-
-|Parameter|Type|Description|
-|:-|:-|:-|
-|`storage egg:shock/give_to_others <<.distance`|in|Damage range|
-|`storage egg:shock/give_to_others <<.amount`|in|Damage amount|
-|`storage egg:shock/give_to_others <<.source`|in|UUID of attacker entity|
-|`storage egg:shock/give_to_others <<.namespace`|in|Damage type (namespace)|
-|`storage egg:shock/give_to_others <<.type`|in|Damage type (type)|
-|`storage egg:shock/give_to_others <<.scale`|in|Knockback multiplier (scale >= 0)|
-|`storage egg:shock/give_to_others <<.xv`|in|Knockback initial velocity x|
-|`storage egg:shock/give_to_others <<.yv`|in|Knockback initial velocity y|
-|`storage egg:shock/give_to_others <<.zv`|in|Knockback initial velocity z|
-|`return`|out|Succeeded or not.|
-
-**Inflicts damage and knockback on attackers within range and entities that are not friendly.**
-
-This damage processing involves no malicious intent on the part of the attacker, and the damaged entity accepts it as mere misfortune.
-
-### `function egg:shock/_give_to_target`
-### `function egg:shock/_give_confuse_to_anyone`
-### `function egg:shock/_give_confuse_to_oppositions`
-### `function egg:shock/_give_confuse_to_others`
-### `function egg:shock/_give_confuse_to_target`
-### `function egg:shock/_give_illusion_to_anyone`
-### `function egg:shock/_give_illusion_to_oppositions`
-### `function egg:shock/_give_illusion_to_others`
-### `function egg:shock/_give_illusion_to_target`
-
-|Parameter|Type|Description|
-|:-|:-|:-|
-|`storage egg:shock/give_xxxx <<.distance`|in|Damage range|
-|`storage egg:shock/give_xxxx <<.amount`|in|Damage amount|
-|`storage egg:shock/give_xxxx <<.source`|in|UUID of attacker entity|
-|`storage egg:shock/give_xxxx <<.namespace`|in|Damage type (namespace)|
-|`storage egg:shock/give_xxxx <<.type`|in|Damage type (type)|
-|`storage egg:shock/give_xxxx <<.scale`|in|Knockback multiplier (scale >= 0)|
-|`storage egg:shock/give_xxxx <<.xv`|in|Knockback initial velocity x|
-|`storage egg:shock/give_xxxx <<.yv`|in|Knockback initial velocity y|
-|`storage egg:shock/give_xxxx <<.zv`|in|Knockback initial velocity z|
-|`return`|out|Succeeded or not.|
-
-**These are functions with insufficient verification.**
-
-`to_target` targets only the entity the attacker is currently targeting.
-`give_confuse` causes the damaged entity to attempt to randomly change its target.
-`give_illusion` causes the damaged entity to attempt to change its target to a random entity that benefits the attacker.
-The target may not always change, such as if the random target is out of sight and lost.
-
-## egg:model
-
-**type** : `minecraft:block_display`
-
-**tag** : `egg.model`
-
-**This feature handles models created by BDEngine.**
-
-It targets data converted by mcbird/bde2egg.js from data packs containing model and animation information output by BDEngine.
-
-You can manipulate model entities generated by the `function #egg:bdengine/[model name (project name)]`.
-
-### `function egg:model/-enable`
-
-|Parameter|Type|Description|
-|:-|:-|:-|
-|`return`|out|Succeeded or not|
-
-**Enable the `egg:model` feature.**
-
-The block display entity for the target `@s` is enabled as egg.model,
-making all egg:model/-xxx features available.
-
-### `function egg:model/-delete`
-
-|Parameter|Type|Description|
-|:-|:-|:-|
-|`return`|out|Succeeded or not|
-
-**Delete the `egg:model` entity.**
-
-Since `egg:model` consists of multiple part entities,
-it cannot be completely deleted with a single /kill command.
-
-Always use this function to delete it.
-
-### `function egg:model/-show`
-
-|Parameter|Type|Description|
-|:-|:-|:-|
-|`storage egg:model/-show <<looks`|in|Display entity data|
-|`return`|out|Succeeded or not|
-
-**Configures the looks for the egg.model entity.**
-
-The default looks generated by BDEngine's model feature
-and converted for egg data packs via mcbird/bde2egg.js
-are stored in `storage egg:bdengine <model_name>`.
-
-Copying that storage to storage `egg:model/-show <<looks`
-sets the default looks.
-
-To use a non-default appearance, modify it by referencing function egg:bdengine/<model_name>/looks.mcfunction.
-
-This data is in array format, but **please note that the order of the array cannot be changed**.
-
-Additionally, if `data.__alias` was set on the BDEngine side, `alias` will also be output as an identifier.
-
-Please use this to distinguish between display screens of the same shape.
-
-### `function egg:model/-rotate`
-
-|Parameter|Type|Description|
-|:-|:-|:-|
-|`return`|out|Succeeded or not|
-
-**Rotate the `egg:model` entity.**
-
-Since `egg:model` consists of multiple part entities,
-a single /rotate command cannot rotate it correctly.
-
-Always use this function to rotate it.
-
-### `function egg:model/-set_pose`
-
-|Parameter|Type|Description|
-|:-|:-|:-|
-|`storage egg:model/-set_pose <<pose`|in|Pose data|
-|`return`|out|Succeeded or not|
-
-**Set pose for the `egg:model` entity.**
-
-This data was generated using the animation features of BDEngine
-and converted for use in egg datapack via mcbird/bde2egg.js.
-
-### `function egg:model/-transform_with_interpolation`
-
-|Parameter|Type|Description|
-|:-|:-|:-|
-|`return`|out|Succeeded or not|
-
-**Performs linear interpolation on the `egg:model` entity.**
-
-Linear interpolation compliant with BDEngine's animation features is applied.
-
-### `function egg:model/-transform_without_interpolation`
-
-|Parameter|Type|Description|
-|:-|:-|:-|
-|`return`|out|Succeeded or not|
-
-**Prevents linear interpolation from being applied to the `egg:model` entity.**
-
-Specify to immediately reflect the pose without linear interpolation for initial pose setting.
-
-## egg:animatioin
-
-**type** : `minecraft:block_display`
-
-**tag** : ``egg:animation``
-
-**This feature handles animation created by BDEngine.**
-
-It targets data converted by mcbird/bde2egg.js from data packs containing model and animation information output by BDEngine.
-
-You can manipulate model entities generated by the `function #egg:bdengine/[model name (project name)]`.
-
-### `function egg:animation/-enable`
-
-|Parameter|Type|Description|
-|:-|:-|:-|
-|`return`|out|Succeeded or not|
-
-**Enable the `egg:animation` feature.**
-
-The block display entity for the target `@s` is enabled as `egg:animation`,
-making all features of `function egg:animation/-xxx available`.
-
-### `function egg:animation/-finished`
-
-|Parameter|Type|Description|
-|:-|:-|:-|
-|`return`|out|Whether playback has finished|
-
-**Checks whether animation playback has finished.**
-
-Checks whether the animation of a target `@s` with a repeat count set to anything other than -1 (infinite loop) has finished playing.
-
-To determine if it is currently playing due to controls like `function egg:animation/-play`, `function egg:animation/-stop`, or `function egg:animation/-pause`,
-check whether it has the `egg:animation.playing` tag.
-
-### `function egg:animation/-pause`
-
-|Parameter|Type|Description|
-|:-|:-|:-|
-|`return`|out|Succeeded or not|
-
-**Pause `egg:animation`.**
-
-Pauses the animation of the target `@s`.
-
-You can resume playback with `function egg:animation/-play`.
-
-### `function egg:animation/-play`
-
-|Parameter|Type|Description|
-|:-|:-|:-|
-|`return`|out|Succeeded or not|
-
-**Play `egg:animation`.**
-
-Plays the animation for the target `@s`.
-
-### `function egg:animation/-set`
-
-|Parameter|Type|Description|
-|:-|:-|:-|
-|`storage egg:animation/-set <<.repeat`|in|Repeat count (-1:infinity)|
-|`storage egg:animation/-set <<.path`|in|Path of animation data|
-|`return`|out|Succeeded or not|
-
-**Set the animation data to `egg:animation`.**
-
-Set the animation data for the target `@s`.
-
-This refers to data generated by BDEngine's animation feature
-and converted for egg format using mcbird/bde2egg.js.
-
-The path name is formed by concatenating the model name (project name) set in BDEngine
-and the animation data name with a hyphen, resulting in a string like [model name]-[animation data name].
-
-### `function egg:animation/-stop`
-
-|Parameter|Type|Description|
-|:-|:-|:-|
-|`return`|out|Succeeded or not|
-
-**Stop `egg:animation`.**
-
-Stop the animation of the target `@s`.
-
-## egg:pack
-
-**This module targets NBT data tags with specific data structures.**
-
-It handles `egg:pack` packages configured in the following two ways:
-
-**[Name-based]**
+### 基本的な使用例
 
 ```mcfunction
-data modify storage <namespace> <path> set value {name:“xxx:aaa/bbb/ccc”,data:{...}}
-data modify entity @s data.<path> set value {name:“xxx:aaa/bbb/ccc”,data:{...}}
+# 押している間を検知
+execute store result score #pushed -- run function egg:key/forward/-pushed
+
+# 押した瞬間を検知
+execute store result score #triggered -- run function egg:key/jump/-triggered
+
+# 離した瞬間を検知
+execute store result score #released -- run function egg:key/sneak/-released
 ```
 
-**[Alias Specification]**
+### 対応キー
+
+* 方向キー：forward（前進）、backward（後退）、left、right
+* 動作キー：jump（ジャンプ）、sneak（スニーク）、sprint（ダッシュ）
+
+### 詳細機能一覧
+
+* [egg:input/-pushed & egg:key/xxx/-pushed](docs/input.md#egginput-pushed--eggkey-pushed) — 押している間を検知
+* [egg:input/-triggered & egg:key/xxx/-triggered](docs/input.md#egginput-triggered--eggkey-triggered) — 押した瞬間を検知
+* [egg:input/-released & egg:key/xxx/-released](docs/input.md#egginput-released--eggkey-released) — 離した瞬間を検知
+* [egg:input/-mainhand](docs/input.md#egginput-mainhand) / [egg:input/-offhand](docs/input.md#egginput-offhand) — アイテム拡張 ID 取得
+
+## egg:model & egg:animation — モデル＆アニメーション機能
+
+BDEngine で作成した3Dモデルをワールド内に召喚・表示・アニメーション再生できます。
+
+### 事前準備
+
+BDEngine で出力したzipファイルを `bde2egg.js` で変換する必要があります。
+
+### 基本的な使用例 (生成→表示→アニメーション再生)
 
 ```mcfunction
-data modify storage <namespace? <path> set value {namespace:xxx,alias:aaa_bbb_ccc,data:{...}}
-data modify entity @s data.<path> set value {namespace:xxx,alias:aaa_bbb_ccc,data:{...}}
+# モデル生成
+data modify storage egg:model/new <<name set value <モデル名>
+function egg:model/new
+data modify storage egg:uuid/match <<uuid set from storage egg:model/new >>uuid
+
+# モデル表示
+data modify storage egg:model/-show <<path set value <モデル名>
+execute as @e[distance=..0.1,tag=egg.model] if function egg:uuid/match run function egg:model/-show
+
+# アニメーション再生
+data modify storage egg:animation/set << set value {path:<モデル名>-<アニメーション名>,repeat:-1}
+execute as @e[distance=..0.1,tag=egg.model] if function egg:uuid/match \
+  if function egg:animation/-enable \
+  if function egg:animation/-set \
+  if function egg:animation/-play \
+    run return 1
+
+# エラー
+return fail
 ```
 
-This assumes the function tag `function #xxx:alias/aaa_bbb_ccc` is defined.
+### 主な機能
+
+* **egg:model**：モデルの生成・表示・回転・ポーズ変更
+* **egg:animation**：アニメーションの設定・再生・一時停止・停止
+
+### 注意
+
+* モデルは複数エンティティで構成されるため、削除時は `egg:model/-delete` を使用してください。
+* 見栄えの変更は `egg:model/define_looks` で可能です。
+
+### 詳細機能一覧
+
+* [egg:model/define_looks](docs/model.md#eggmodeldefine_looks) — モデルの見栄えを定義
+* [egg:model/new](docs/model.md#eggmodelnew) — モデルを生成
+* [egg:model/-delete](docs/model.md#eggmodel-delete) — モデルを削除
+* [egg:model/-show](docs/model.md#eggmodel-show) — モデルを表示
+* [egg:model/-rotate](docs/model.md#eggmodel-rotate) — モデルを回転
+* [egg:model/-rotate_from_data](docs/model.md#eggmodel-rotate_from_data) — モデルを回転 (`Rotation` 版)
+* [egg:animation/-enable](docs/model.md#egganimation-enable) — モデルのアニメーション機能を有効化
+* [egg:animation/-set](docs/model.md#egganimation-set) — アニメーションを設定
+* [egg:animation/-play](docs/model.md#egganimation-play) — アニメーションを再生
+* [egg:animation/-pause](docs/model.md#egganimation-pause) — アニメーションを一時停止
+* [egg:animation/-stop](docs/model.md#egganimation-stop) — アニメーションを停止
+
+## egg:pack — コールバック関数の NBT データ化
+
+関数名と引数データを1つのNBTにまとめて、コールバックとして扱えるようにします。
+
+### 基本的な使用例
+
+```mcfunction
+# 関数データを保存
+data modify entity @s data.callback set value {
+  name: "xxx:yyyy/zzzz",
+  data: {flag:true, value:3}
+}
+
+# 呼び出し
+data modify storage egg:pack/call <<pack set from entity @s data.callback
+function egg:pack/call
+```
+
+### 詳細機能一覧
+
+* [egg:pack/call](docs/event.md#eggpackcall) — `egg.pack` 関数データを実行
+
+## egg:interaction — イベント型インタラクション
+
+インタラクションエンティティのクリックを、コールバック関数で簡単に扱えるようにします。
+
+### 基本的な使用例
+
+右クリック時・左クリック時に実行したい関数を `egg.pack` 関数データで指定します。
+
+```mcfunction
+# インタラクションをイベント型に設定
+data modify storage egg:interaction/-enable << set value {
+  attack:   {name:"xxx:on_attacked", data:{flag:true}},
+  interact: {name:"xxx:on_interacted", data:{value:5}}
+}
+execute summon minecraft:interaction run function egg:interaction/-enable
+```
+
+### 詳細機能一覧
+
+* [egg:interaction/-enable](docs/event.md#egginteraction-enable) — 左クリック・右クリックのコールバックを設定
+
+## egg:ray — 高速レイキャスト機能
+
+DDAアルゴリズムを使った高速なレイキャスト機能です。
+
+### 基本的な使用例
+
+```mcfunction
+# プレイヤーの目線から5m先までレイキャスト
+data modify storage egg:ray/cast << set value {
+  distance: 5,
+  condition: "unless",
+  namespace: "minecraft",
+  tag: "replaceable",
+  callback: "xxx:yyyy/on_hit"
+}
+
+function egg:player/-eyes
+data modify storage egg:ray/cast <<.position set from storage egg:player/-eyes >>position
+function egg:data/2d-float_from_rotation
+data modify storage egg:ray/cast <<.rotation set from storage egg:data/2d-float_from_rotation >>2d~float
+
+function egg:ray/cast
+```
+
+### 詳細機能一覧
+
+* [egg:ray/cast](docs/event.md#eggraycast) — レイキャスト実行
+
+## egg:block — 疑似カスタムブロック機能
+
+手に持ったアイテムの NBT データを基に、右クリックで設置可能なカスタムブロックを実装できます。外観・右クリック時のイベント・破壊時の処理を自由に設定可能です。
+
+### 必須コンポーネント
 
 ```json
-{
-  “replace”: true,
-  “values”: [“xxx:aaa/bbb/ccc”]
+"components": {
+  "minecraft:item_name": "Custom Block",
+  "minecraft:item_model": "xxx:yyyy",
+  "minecraft:custom_data": {
+    "egg": {
+      "type": "block",           // 必須
+      "base": "shroomlight",     // 必須（barrier / shroomlight / spawner）
+      "setup": "xxx:setup",      // 任意：設置時
+      "event": "xxx:on_click",   // 任意：右クリック時
+      "teardown": "xxx:teardown" // 任意：破壊時
+    }
+  },
+  "minecraft:blocks_attacks": {"damage_reductions": [{"base": 0, "factor": 0}]}
 }
 ```
 
-Name specification is limited to 7 levels.
-
-data:{...} is generic information set to `storage egg:pack/call <<` when called by `function egg:pack/call`.
-
-This enables managing state and procedures as a set within data.
-
-It can be stored anywhere in NBT data tags and executed as follows.
+### 基本的な使用例（データパック側から設置する場合）
 
 ```mcfunction
-data modify storage egg:pack/call <<pack set from entity @s data.<path>
-function egg:pack/call
-
-data modify storage egg:pack/call <<pack set from storage <namespace>.<path>
-function egg:pack/call
+# 持っている egg.block アイテムを取得して設置
+function egg:player/-block
+data modify storage egg:block/place <<item set from storage egg:player/-block >>item
+execute at @s run function egg:block/place
 ```
 
-### `function egg:pack/call`
+プレイヤーは上記のコンポーネントが設定されたアイテムを持っていれば、**右クリックするだけでカスタムブロックを設置**できます。
 
-|Parameter|Type|Description|
-|:-|:-|:-|
-|`storage egg:pack/call <<pack`|in|`egg.pack` package|
-|`return`|out|Succeeded or not|
+### 詳細機能一覧
 
-**Executes the `egg.pack` package.**
+* [egg:block/place](docs/event.md#eggblockplace) — NBT データからカスタムブロック設置
 
-Calls a function registered in the `egg:pack` package while storing generic information about `data` in `storage egg:pack/call <<`.
+## egg:soul & egg:brain —  カスタムモブ基盤（魂＋思考回路）
 
-### `function egg:pack/preload`
+懐き（フォロー）と戦闘行動を両立させた、高度なカスタムモブを作成するための基盤機能です。egg:soul（魂）が平常時の友好的な行動を、egg:brain（思考回路）が戦闘時の行動を担当します。
 
-|Parameter|Type|Description|
-|:-|:-|:-|
-|`storage egg:pack/preload <<name`|in|Function name|
-|`return`|out|Succeeded or not|
+### 基本的な使用例
 
-**Pre-registers the function name.**
+```mcfunction
+# 1. オオカミベースの魂を生成・リンク
+function egg:soul/push/wolf
 
-The `egg:pack` package requires significant parsing when aliases aren't specified, often causing heavy initial load.
+# 2. 最も近いプレイヤーをフォロー対象に設定
+data modify storage egg:soul/-follow <<uuid set from entity @p UUID
+execute on passengers on origin run function egg:soul/-follow
 
-Pre-registering with this function performs parsing in the background.
+# 3. 魂の動きを実体に反映（毎ティック推奨）
+execute on passengers on origin run data modify entity @s Motion set from entity @s Motion
+execute on passengers on origin run data modify entity @s Rotation set from entity @s Rotation
+```
 
-## egg:nog
+### 攻撃対象の設定例
 
-**utilitys for easier handling of egg data packs.**
+```mcfunction
+# 攻撃対象を設定（戦闘モードに移行）
+data modify storage egg:soul/-target <<uuid set from entity @e[sort=nearest,scores={egg.alignment=-1},limit=1] UUID
+execute on passengers on origin run function egg:soul/-target
+```
 
-Since egg data pack specifications are unique, this utility provides a simplified interface for more general handling, along with a collection of handy, miscellaneous, simple functions.
+### 詳細機能一覧
 
-### `function egg:nog/macro/new_animation`
+* [egg:soul/push/allay](docs/soul.md#eggsoulpushallay) / [egg:soul/push/nautilus](docs/soul.md#eggsoulpushnautilus) / [egg:soul/push/wolf](docs/soul.md#eggsoulpushwolf) — `egg.soul` を生成・実態にリンク
+* [egg:soul/-attacking](docs/soul.md#eggsoul-attacking) — 戦闘中かどうか
+* [egg:soul/-target](docs/soul.md#eggsoul-target) / [egg:soul/-lift](docs/soul.md#eggsoul-lift) — 攻撃対象の設定 / 解除
+* [egg:soul/-follow](docs/soul.md#eggsoul-follow) / [egg:soul/-unfollow](docs/soul.md#eggsoul-unfollow) — フォロー対象の設定 / 解除
+* [egg:soul/-following_to](docs/soul.md#eggsoul-following_to) — フォロー対象の UUID を取得
+* [egg:soul/-following](docs/soul.md#eggsoul-following) — フォローしているかどうか
+* [egg:brain/-infight](docs/soul.md#eggbrain-infight) — 接近戦状態かどうか
+* [egg:brain/-launch_infight](docs/soul.md#eggbrain-launch_infight) / [egg:brain/-launch_outbox](docs/soul.md#eggbrain-launch_outbox) — 接近戦 / 遠距離戦を挑む思考回路に設定
 
-|Parameter|Type|Description|
-|:-|:-|:-|
-|`with repeat`|in|Number of repeats (-1: infinite loop)|
-|`with model`|in|Model name|
-|`with anime`|in|Animation name|
-|`return`|out|Succeeded or not|
+### 注意点
 
-**Generates a model and plays the animation.**
+* 実体（ベースモブ）は `egg.soul` を参照して自ら追従する必要があります（`Motion` と `Rotation` の反映推奨）
+* 実体が消滅すると `egg.soul` と `egg.brain` も自動で消滅します
 
-The generated model has the `__uninitialized` tag set, so please use it during initialization.
+## egg:despawn — 自動デスポーン機能
 
-After initialization completes, the `__uninitialized` tag must be removed.
+遠くに離れたカスタムモブなどを自然にデスポーンさせる機能です。
 
-### `function egg:nog/macro/new_model`
+### 基本的な使用例
 
-|Parameter|Type|Description|
-|:-|:-|:-|
-|`with model`|in|model_name|
-|`return`|out|Succeeded or not|
+```mcfunction
+# 召喚した特殊モブ（今回は自動デスポーンの無効化）に egg.despawn 機能を有効化
+summon minecraft:wolf ~ ~ ~ {Tags:["_uninitialized"],PersistenceRequired:true}
+execute as @e[distance=..0.1,tag=_uninitialized] if function egg:despawn/-enable run tag @s remove _uninitialized
+```
 
-**Creates a model.**
+```mcfunction
+# egg.despawn 機能を持つ特殊モブが飼いならされていれば egg.dwspawn 機能を無効化
+execute as @e[tag=egg.despawn] if data entity @s Owner run function egg:despawn/-disable
+```
 
-The generated model has the `__uninitialized` tag set; use this during initialization.
+### 詳細機能一覧
 
-After initialization completes, you must remove the `__uninitialized` tag.
+* [egg:despawn/-enable](docs/soul.md#eggdespawn-enable) / [egg:despawn/-disable](docs/soul.md#eggdespawn-disable) — デスポーンの有効化 / 無効化
 
-### `function egg:nog/macro/play_animation`
+## egg:shock — 拡張ダメージ処理
 
-|Parameter|Type|Description|
-|:-|:-|:-|
-|`with repeat`|in|Number of repeats (-1: infinite loop)|
-|`with model`|in|Model name|
-|`with anime`|in|Animation name|
-|`return`|out|Succeeded or not|
+プレイヤーとの関係性（`egg.alignment`）を考慮した、柔軟で実用的なダメージ処理機能を提供します。
 
-**Plays an animation.**
+### 主な特徴
 
-Plays the animation for the target `@s` model.
+* コマンド実行位置を中心とした範囲ダメージ
+* 攻撃者の別指定（投擲武器など間接攻撃に対応）
+* ノックバックの細かい制御
+* 前処理（エフェクト付与など）の設定
+* `egg.alignment` による対象選別
 
-### `function egg:nog/compare_uuid`
+### 基本的な使用例
 
-|Parameter|Type|Description|
-|:-|:-|:-|
-|`storage egg:nog/compare_uuid <<this`|in|This entity's UUID|
-|`storage egg:nog/compare_uuid <<that`|in|That entity's UUID|
-|`return`|out|UUIDs are Equals|
+```mcfunction
+# 自分を中心として8m以内の敵対モブに12ダメージ + ノックバック
+data modify storage egg:shock/give_to_oppositions << set value {distance:8, amount:12, yv:0.75}
+data modify storage egg:shock/give_to_oppositions <<.source set from entity @s UUID
+execute at @s run function egg:shock/give_to_oppositions
+```
 
-**Compares whether two UUIDs are equal.**
+### 詳細機能一覧
 
-### `function egg:nog/match_uuid`
+* [egg:shock/give_by_no_one](docs/shock.md#eggshockgive_by_no_one) — 攻撃者なしの災害ダメージ
+* [egg:shock/give_to_anyone](docs/shock.md#eggshockgive_to_anyone) — 攻撃者以外すべてにダメージ
+* [egg:shock/give_to_oppositions](docs/shock.md#eggshockgive_to_oppositionss) — 敵対関係のみにダメージ（最もよく使う）
+* [egg:shock/give_to_others](docs/shock.md#eggshockgive_to_others) — 友好関係以外すべてにダメージ
+* [egg:shock/give_to_target](docs/shock.md#eggshockgive_to_target) — 攻撃対象のみにダメージ
 
-|Parameter|Type|Description|
-|:-|:-|:-|
-|`storage egg:nog/match_uuid <<target`|in|Target entity's UUID.|
-|`return`|out|UUIDs are matched.|
+### 注意
 
-**Checks UUID whether `@s` matches target.**
+前処理 (`<<.preprocess`) を設定すると、ダメージを受ける前に任意の関数を実行できます。
+詳細は **[shock 用前処理](docs/definition.md#eggshock-用前処理)** を参照。
 
-### `function egg:nog/origin`
+## egg:alignment — 関係性判定機能
 
-|Parameter|Type|Description|
-|:-|:-|:-|
-|`return`|out|Whether it has `on origin`|
+プレイヤーを基準としたモブとの関係性（アライメント）を管理・判定します。
 
-**Retrieves whether it has `on origin`.**
+|友好的|中立的|敵対的|
+|:--:|:--:|:--:|
+|1|0|-1|
 
-### `function egg:nog/passengers`
+召喚時に `egg.manual` タグがないモブは自動で適切な値が設定されます。
+詳細は **[アライメント](docs/definition.md#アライメント)** を参照。
 
-|Parameter|Type|Description|
-|:-|:-|:-|
-|`return`|out|Number of passengers|
+### 基本的な使用例
 
-**Returns the number of passengers.**
+```mcfunction
+# tag=a と tag=b のエンティティが敵対関係かどうか確認
+scoreboard players operation #egg:alignment/conflict|<<this -- = @e[tag=a,limit=1] egg.alignment
+scoreboard players operation #egg:alignment/conflict|<<that -- = @e[tag=b,limit=1] egg.alignment
+execute if function egg:alignment/conflict run say They ar conflict!
+```
 
-### `function egg:nog/scale_motion`
+### 詳細機能一覧
+* [egg:alignment/conflict](docs/shock.md#eggalignmentconflict) — 対立判定
+* [egg:alignment/friendly](docs/shock.md#eggalignmentfriendly) — 友好判定
 
-|Parameter|Type|Description|
-|:-|:-|:-|
-|`storage egg:nog/scale_motion <<motion`|in|Motion data|
-|`storage egg:nog/scale_motion <<scale`|in|Scale|
-|`storage egg:nog/scale_motion >>motion`|out|Scaled Motion data|
-|`return`|out|Succeeded function or not|
+### 注意
 
-**Scale Motion.**
+* これはプレイヤー視点の関係性です（PvPや敵同士の関係は表現できません）
+* `egg.manual` タグを持つエンティティは自動設定されないので、手動管理が必要です
 
-Motion data correspond to the Rotation and Motion NBT data tags.
+## egg:data — ストレージデータ安全管理
 
-### `function egg:nog/target`
+`Pos`、`Motion`、`Rotation` などの実数配列データをストレージに保存する際に発生する**0.0の最適化消失問題**を回避します。
 
-|Parameter|Type|Description|
-|:-|:-|:-|
-|`return`|out|Whether it has on target|
+### 基本的な使用例
 
-**Retrieves whether it has on target.**
+```mcfunction
+# 安全に Motion を取得
+execute as @s run function egg:data/3d-double_from_motion
+data modify storage temp:motion set from storage egg:data/3d-double_from_motion >>3d~double
+```
 
-### `function egg:nog/vehicle`
+### 詳細機能一覧
 
-|Parameter|Type|Description|
-|:-|:-|:-|
-|`return`|out|Whether it has on vehicle|
+* [egg:data/2d-float_from_rotation](docs/data.md#eggdata2d-float_from_rotation) — 安全に `Rotation` を取得
+* [egg:data/3d-double_from_motion](docs/data.md#eggdata3d-double_from_motion) — 安全に `Motion` を取得
+* [egg:data/3d-double_from_position](docs/data.md#eggdata3d-double_from_position) — 安全に `Pos` を取得
+* [egg:data/adjust_2d-float](docs/data.md#eggdataadjust_2d-float) — 2D Float データを安全なデータに調整
+* [egg:data/adjust_3d-double](docs/data.md#eggdataadjust_3d-double) — 3D Double データを安全なデータに調整
+* [egg:data/difference_3d-double](docs/data.md#eggdatadifference_3d-double) — 3D Double データ同士の差分
+* [egg:data/scale_3d-double](docs/data.md#eggdatascale_3d-double) — 3D Double データに倍率の乗算
 
-**Retrieves whether it has on vehicle.**
+## egg:player — プレイヤー情報取得
 
-### `function egg:nog/ride`
+プレイヤーに関する便利情報を取得できます（全プレイヤーに自動適用）。
 
-|Parameter|Type|Description|
-|:-|:-|:-|
-|`storage egg:nog/ride <<uuid`|in|UUID of the entity to mount onto `@s`|
-|`return`|out|Success or failure of the operation|
+### 詳細機能一覧
 
-**Mounts the entity specified by `<<uuid` onto `@s`.**
+* [egg:player/-block](docs/player#eggplayer-block) — 手に持つ `egg.block` アイテム情報取得
+* [egg:player/-device](docs/player#eggplayer-device) — 手に持つ `egg.device` アイテム情報取得
+* [egg:player/-eyes](docs/player#eggplayer-eyes) — 目線位置を取得
+
+## egg:math — 数学関係機能
+
+各種数学関数を提供します。
+
+### 基本的な使用例
+
+```mcfunction
+# 絶対値を取得
+scoreboard players set #egg:math/abs|<<x -- -3
+execute store result score #abs -- run function egg:math/abs
+```
+
+### 詳細機能一覧
+
+* [egg:math/abs](docs/math.md#eggmathabs) — 絶対値
+* [egg:math/sgn](docs/math.md#eggmathsin) — 符号
+* [egg:math/floor](docs/math.md#eggmathsgn) — 小数点切り捨て
+* [egg:math/sin](docs/math.md#eggmathcos) — sin
+* [egg:math/cos](docs/math.md#eggmathfloor) — cos
+* [egg:math/tan](docs/math.md#eggmathtan) — tan
+* [egg:math/asin_acos](docs/math.md#eggmathasin_acos) — asin, acos
+* [egg:math/atan2](docs/math.md#eggmathatan2) — atan2
+
+## egg:utility — その他の便利機能
+
+### 詳細機能一覧
+
+#### egg:uuid — UUID 比較 
+
+* [egg:uuid/compare](docs/utility.md#egguuidcompare) — 2つのUUIDが一致するか
+* [egg:uuid/match](docs/utility.md#egguuidmatch) — 指定UUIDを持つエンティティを検索
+
+#### egg:on — execute on の安全版
+
+on コマンドの @s 切り替わりを防ぎながら関係性を確認できます。
+
+* [egg:on/xxxx](docs/utility.md#eggon) — 関係性の情報取得
+
+#### egg:pointer — エンティティ参照ポインタ
+
+* [egg:pointer/-enable](docs/utility.md#eggpointer-enable) — 雪玉ポインタを有効化
+* [egg:pointer/-set](docs/utility.md#eggpointer-set) — 参照先を設定
+
+#### egg:property/invisible — 永続透明化
+
+エンティティを永続的に透明化します（エフェクトより安定）。
+
+* [egg:property/invisible/add](docs/utility.md#eggpropertyinvisibleadd) / [egg:property/invisible/remove](docs/utility.md#eggpropertyinvisibleremove) — 永続透明化の付与 / 解除
+
+#### egg:ride — 騎乗
+
+UUID を元にエンティティを騎乗させます。
+
+* [egg:ride](docs/utility.md#eggride-1) — エンティティ騎乗
+
+
+## 8. 既知の問題 / 今後の予定
+
+### 現在の既知の問題
+
+- 一部の3D関連関数（`cross_product`, `dot_productなど`）は固定小数点演算のため精度に制限があります。
+- 外部座標ディメンション `egg:_coord` を使用する関数は、ワールド読み込み直後に利用できない場合があります。
+- 大量のモデル・カスタムモブを同時に扱うと処理負荷が増大します（最適化の余地あり）。
+- `egg.block` の連続破壊とスニーク設置（右クリック抑止）動作が再現できていません。
+
+### 今後の予定
+
+- さらなる精度向上と負荷軽減
+- スナップショット版への対応拡大
+- より高度なカスタムモブAIサンプルの追加
+- ドキュメントの拡充（動画解説など）
+
+ご意見・ご要望・バグ報告は GitHub の Issue までお願いします。
+
+## 9. クレジット
+
+### 作成者
+
+- **ricerabbitalk**（メイン開発・設計）
+- **鯱朧**（ドキュメント作成支援）
+
+### 特別感謝
+
+- テストプレイやフィードバックをくれた皆さん
+- BDEngine の開発者の方々
+- Minecraft データパックコミュニティの皆さん
+
+### ライセンス
+
+本データパックの本体部分は **[MIT License](LICENSE)** のもとで公開されています。  
+商用・非商用問わず、自由に利用・改変・再配布可能です。
+
+ただし、egg ベースに開発されるデータパックや、後日公開予定の動作サンプル chick 内の一部にある **創作要素**（Mirror Phantomなどの独自世界観に関わる部分）は別途ライセンスを確認してください。
+
+### データの著作権について
+
+egg を含めた mcbird プロジェクトは、BDEngine の出力データを変換・再生するためのシステム枠組みを提供しています。
+サードパーティ製のモデルデータ、または他者が作成したモデルデータをご利用の際は、必ず原作者の利用規約（ライセンス）を確認し、許諾された範囲内でご利用ください。
+
+### 免責事項
+
+MIT License の免責事項と重複しますが、mcbird プロジェクトの利用によって生じた、著作権上のトラブル、データの破損、その他いかなる損害についても、開発者は一切の責任を負いかねます。
+
+---
+
+**Essential General Gear (egg)** をご利用いただきありがとうございます！  
+このデータパックが、あなたのデータパック制作を少しでも楽にできれば幸いです。
+
+何か問題や提案がありましたら、遠慮なくお知らせください。

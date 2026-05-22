@@ -1,9 +1,22 @@
 {
   "replace": false,
   "values": [
-    "egg:input/__load",
-    "egg:alignment/__load",
-    "egg:animation/__load",
-    "egg:pack/__load"
+    "egg:despawn/_load",
+    "egg:ray/_load",
+    "egg:input/_load",
+    "egg:block/_load",
+    "egg:alignment/_load",
+    "egg:animation/_load",
+    "egg:brain/_load",
+    "egg:soul/_load",
+    "egg:pack/_load",
+    "egg:player/_load",
+    "egg:key/backward/_load",
+    "egg:key/forward/_load",
+    "egg:key/left/_load",
+    "egg:key/right/_load",
+    "egg:key/jump/_load",
+    "egg:key/sneak/_load",
+    "egg:key/sprint/_load"
   ]
 }

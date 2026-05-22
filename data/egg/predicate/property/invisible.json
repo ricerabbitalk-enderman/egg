@@ -1,0 +1,9 @@
+{
+  "condition": "entity_properties",
+  "entity": "this",
+  "predicate": {
+    "effects": {
+      "minecraft:invisibility": {"duration": -1, "amplifier": 127, "visible": false, "ambient": false}
+    }
+  }
+}

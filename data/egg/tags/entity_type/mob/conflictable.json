@@ -1,7 +1,0 @@
-{
-  "replace": false,
-  "values": [
-    "#egg:mob/emotional",
-    "minecraft:piglin"
-  ]
-}

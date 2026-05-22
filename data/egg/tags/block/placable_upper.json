@@ -1,0 +1,21 @@
+{
+  "replace": false,
+  "values": [
+    "#minecraft:wool_carpets",
+    "#minecraft:anvil",
+    "#minecraft:beds",
+    "#minecraft:cauldrons",
+    "#minecraft:fences",
+    "#minecraft:fence_gates",
+    "#minecraft:flower_pots",
+    "#minecraft:lanterns",
+    "#minecraft:lightning_rods",
+    "#minecraft:copper_chests",
+    "minecraft:chest",
+    "minecraft:trapped_chest",
+    "minecraft:ender_chest",
+    "#minecraft:shulker_boxes",
+    "#minecraft:pressure_plates",
+    "#minecraft:rails"
+  ]
+}

@@ -1,6 +1,6 @@
 {
   "replace": false,
   "values": [
-    "egg:__/__define"
+    "egg:_define"
   ]
 }

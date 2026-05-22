@@ -1,1 +1,0 @@
-$return run data get storage egg:bdengine $(path)

@@ -1,20 +1,25 @@
+#:function ja
+#@in storage 2d~double [double, double] データ
+#@out storage atan~double atan 値 (度数法)
+#@return 処理の成否（外部座標ディメンションが利用できない場合は失敗する）
+#@text
+#> 360度対応の atan を取得します。
+#> 外部座標ディメンション egg:_coord を使った技術のため、ワールド生成直後から利用可能になるまでラグがあります。
+#> 読み込み直後から利用する際は関数の成否を必ず確認するようにしてください。
+#@code mcfunction
+#> # ランダムな x, z の atan を取得
+#> data modify storage egg:math/atan2 <<2d~double set value [1.0e-307d,1.0e-307d]
+#> execute store result storage egg:math/atan2 <<2d~double[0] double 0.015625 run random value -1024..1024
+#> execute store result storage egg:math/atan2 <<2d~double[1] double 0.015625 run random value -1024..1024
+#> execute unless function egg:math/atan2 run return fail
+#> tellraw @a ["2d",":",{storage:"egg:math/atan2",nbt:"<<2d~double"},",","atan",":",{storage:"egg:math/atan2",nbt:">>atan~double"}]
+#:
+
+## Cleanup.
+data remove storage egg:math/atan2 >>atan~double
+
 ## Verify.
-execute unless data storage egg:math/atan2 <<x~double run return run function egg:__/error/throw {message:"[ERROR] function egg:math/atan2 (2): storage not found (storage egg:math/atan2 <<x~double)",storage:"egg:math/atan2",nbt:"<<x~double"}
-execute unless data storage egg:math/atan2 <<y~double run return run function egg:__/error/throw {message:"[ERROR] function egg:math/atan2 (3): storage not found (storage egg:math/atan2 <<y~double)",storage:"egg:math/atan2",nbt:"<<y~double"}
+execute unless function egg:_coord/loaded run return fail
 
-## Cast to fixed.
-data modify storage egg:__/point/fixed/from_double <<~double set from storage egg:math/atan2 <<x~double
-execute store result score #egg:math/fixed/atan2|<<x~fixed -- run function egg:__/point/fixed/from_double
-data modify storage egg:__/point/fixed/from_double <<~double set from storage egg:math/atan2 <<y~double
-execute store result score #egg:math/fixed/atan2|<<y~fixed -- run function egg:__/point/fixed/from_double
-
-## Calculate.
-execute store result score #egg:__/point/fixed/to_double|<<~fixed -- run function egg:math/fixed/atan2
-
-## Cast to double.
-# arctan
-function egg:__/point/fixed/to_double
-data modify storage egg:math/atan2 >>atan~double set from storage egg:__/point/fixed/to_double >>~double
-
-## Success.
-return 1
+## Get.
+execute in egg:_coord positioned 0.0 0.0 0.0 rotated 0.0 0.0 run return run function egg:math/-/atan2

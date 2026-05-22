@@ -1,0 +1,2 @@
+execute positioned 0.0 0.0 0.0 rotated as @e[x=0,y=0,z=0,type=minecraft:text_display,tag=egg.coord.egg_shock.origin,limit=1] \
+    run teleport @e[x=0,y=0,z=0,type=minecraft:text_display,tag=egg.coord.egg_shock.z,limit=1] ^ ^ ^1.0 ~ ~

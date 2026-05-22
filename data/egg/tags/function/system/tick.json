@@ -1,9 +1,13 @@
 {
   "replace": false,
   "values": [
-    "egg:input/__tick",
-    "egg:alignment/__tick",
-    "egg:animation/__tick",
-    "egg:pack/__tick"
+    "egg:property/_tick",
+    "egg:block/_tick",
+    "egg:interaction/_tick",
+    "egg:animation/_tick",
+    "egg:brain/_tick",
+    "egg:soul/_tick",
+    "egg:_mob/_tick",
+    "egg:player/_tick"
   ]
 }

@@ -1,0 +1,1 @@
+return run scoreboard players set @s egg.alignment 1

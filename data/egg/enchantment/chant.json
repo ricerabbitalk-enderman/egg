@@ -1,0 +1,15 @@
+{
+  "description": {"text": "chant"},
+  "anvil_cost": 0,
+  "min_cost": {"base": 0, "per_level_above_first": 0},
+  "max_cost": {"base": 0, "per_level_above_first": 0},
+  "max_level": 1,
+  "slots": ["any"],
+  "supported_items": "minecraft:crossbow",
+  "weight": 1,
+  "primary_items": "minecraft:crossbow",
+  "exclusive_set": [],
+  "effects": {
+    "crossbow_charge_time": {"type": "minecraft:set", "value": {"type": "lookup", "values": [3.402823e+38], "fallback": 3.402823e+38}}
+  }
+}
